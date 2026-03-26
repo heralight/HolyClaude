@@ -4,6 +4,17 @@ All notable changes to HolyClaude will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.1.1] - 03/26/2026
+
+### Fixed
+- Workspace bind mount permissions on first run when Docker creates the directory as root
+- Workspace directory now tracked via `.gitkeep` to prevent root ownership on fresh clones
+
+### Added
+- Configurable host-side port and bind-mount paths via `.env` file (`HOLYCLAUDE_HOST_PORT`, `HOLYCLAUDE_HOST_CLAUDE_DIR`, `HOLYCLAUDE_HOST_WORKSPACE_DIR`)
+
+Thanks to [@Sunwood-ai-labs](https://github.com/Sunwood-ai-labs) for this contribution.
+
 ## [1.1.0] - 03/25/2026
 
 ### Added
