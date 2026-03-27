@@ -4,6 +4,13 @@ All notable changes to HolyClaude will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.1.2] - 03/26/2026
+
+### Added
+- Docker HEALTHCHECK instruction for container health monitoring
+- Bootstrap now backs up existing `settings.json` and `CLAUDE.md` before overwriting on re-bootstrap
+- Expanded CONTRIBUTING.md with build commands, testing steps, file map, and PR checklist
+
 ## [1.1.1] - 03/26/2026
 
 ### Fixed

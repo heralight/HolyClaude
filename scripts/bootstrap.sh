@@ -19,6 +19,7 @@ echo "[bootstrap] Running first-boot initialization..."
 mkdir -p "$CLAUDE_HOME/.claude"
 
 # ---------- Copy settings.json ----------
+[ -f "$CLAUDE_HOME/.claude/settings.json" ] && cp "$CLAUDE_HOME/.claude/settings.json" "$CLAUDE_HOME/.claude/settings.json.bak"
 cp "$SOURCE_DIR/settings.json" "$CLAUDE_HOME/.claude/settings.json"
 echo "[bootstrap] Copied settings.json"
 
@@ -27,6 +28,7 @@ VARIANT="full"
 if [ -f /etc/holyclaude-variant ]; then
     VARIANT=$(cat /etc/holyclaude-variant)
 fi
+[ -f "$CLAUDE_HOME/.claude/CLAUDE.md" ] && cp "$CLAUDE_HOME/.claude/CLAUDE.md" "$CLAUDE_HOME/.claude/CLAUDE.md.bak"
 cp "$SOURCE_DIR/claude-memory-${VARIANT}.md" "$CLAUDE_HOME/.claude/CLAUDE.md"
 echo "[bootstrap] Copied CLAUDE.md (${VARIANT} variant)"
 

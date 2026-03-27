@@ -187,5 +187,9 @@ RUN chmod +x /etc/s6-overlay/s6-rc.d/cloudcli/run \
 # ---------- Working directory ----------
 WORKDIR /workspace
 
+# ---------- Health check ----------
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD curl -sf http://localhost:3001/ || exit 1
+
 # ---------- s6-overlay as PID 1 ----------
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

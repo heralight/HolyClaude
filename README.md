@@ -809,7 +809,7 @@ Your data persists in `./data/claude` and `./workspace` — upgrading only repla
 To pin a specific version instead of `latest`:
 
 ```yaml
-image: coderluii/holyclaude:1.1.1   # instead of :latest
+image: coderluii/holyclaude:1.1.2   # instead of :latest
 ```
 
 <p align="right">
