@@ -86,6 +86,7 @@ Your existing Anthropic account works directly:
 | :trophy: | [Built with HolyClaude](#trophy-built-with-holyclaude) |
 | :handshake: | [Contributing](#handshake-contributing) |
 | :heart: | [Support](#heart-support) |
+| :scroll: | [Third-Party Software](#scroll-third-party-software) |
 | :page_facing_up: | [License](#page_facing_up-license) |
 
 <p align="right">
@@ -1059,6 +1060,24 @@ If it saved you time, here's how you can help:
 
 [![PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://www.paypal.com/donate/?hosted_button_id=PM2UXGVSTHDNL)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-yellow.svg?style=flat&logo=buy-me-a-coffee)](https://buymeacoffee.com/CoderLuii)
+
+<p align="right">
+  <a href="#top">↑ back to top</a>
+</p>
+
+---
+
+## :scroll: Third-Party Software
+
+The HolyClaude Docker image includes third-party software, each under its own license. Notable components:
+
+| Component | License | Source |
+|-----------|---------|--------|
+| CloudCLI | GPL-3.0 | [siteboon/claudecodeui](https://github.com/siteboon/claudecodeui) |
+| s6-overlay | ISC | [just-containers/s6-overlay](https://github.com/just-containers/s6-overlay) |
+| Node.js | MIT | [nodejs/node](https://github.com/nodejs/node) |
+
+See [THIRD-PARTY-NOTICES](THIRD-PARTY-NOTICES) for full details including modification notices. HolyClaude's own source code is MIT licensed.
 
 <p align="right">
   <a href="#top">↑ back to top</a>

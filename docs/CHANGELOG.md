@@ -4,6 +4,12 @@ All notable changes to HolyClaude will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.1.5] - 03/28/2026
+
+### Added
+- `THIRD-PARTY-NOTICES` file with license attribution for bundled third-party software
+- Third-Party Software section in README
+
 ## [1.1.4] - 03/28/2026
 
 ### Added
