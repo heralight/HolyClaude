@@ -4,6 +4,15 @@ All notable changes to HolyClaude will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.1.7] - 03/28/2026
+
+### Added
+- Codex CLI pre-configured with `on-request` approval policy and `workspace-write` sandbox (no more repeated approval prompts)
+- Codex, Gemini, and Cursor CLI auth and config persistence across container rebuilds (symlinked into bind-mounted volume)
+- Apprise notification hooks for Codex and Gemini CLIs (same `notify-on` flag file as Claude Code)
+- Cursor CLI notification hook pre-configured (activates when Cursor CLI adds stop event support)
+- Claude Code OAuth session persistence across container recreation (`~/.claude.json` backed up to bind mount)
+
 ## [1.1.6] - 03/28/2026
 
 ### Fixed

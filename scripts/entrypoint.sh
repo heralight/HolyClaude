@@ -44,10 +44,44 @@ if ! runuser -u "$CLAUDE_USER" -- test -w "$WORKSPACE_DIR"; then
     echo "[entrypoint] WARNING: /workspace is still not writable; fix host ownership or PUID/PGID"
 fi
 
-# ---------- Pre-create ~/.claude.json as a FILE ----------
-# If this does not exist before Docker mounts, Docker creates it as a DIRECTORY
-if [ ! -f "$CLAUDE_HOME/.claude.json" ]; then
-    echo "[entrypoint] Pre-creating ~/.claude.json"
+# ---------- Codex CLI config symlink (every boot) ----------
+mkdir -p "$CLAUDE_HOME/.claude/.codex"
+chown "$PUID:$PGID" "$CLAUDE_HOME/.claude/.codex"
+[ -L "$CLAUDE_HOME/.codex" ] && [ ! -e "$CLAUDE_HOME/.codex" ] && rm -f "$CLAUDE_HOME/.codex"
+if [ ! -e "$CLAUDE_HOME/.codex" ]; then
+    ln -s "$CLAUDE_HOME/.claude/.codex" "$CLAUDE_HOME/.codex"
+    chown -h "$PUID:$PGID" "$CLAUDE_HOME/.codex"
+fi
+
+# ---------- Gemini CLI config symlink (every boot) ----------
+mkdir -p "$CLAUDE_HOME/.claude/.gemini"
+chown "$PUID:$PGID" "$CLAUDE_HOME/.claude/.gemini"
+[ -L "$CLAUDE_HOME/.gemini" ] && [ ! -e "$CLAUDE_HOME/.gemini" ] && rm -f "$CLAUDE_HOME/.gemini"
+if [ ! -e "$CLAUDE_HOME/.gemini" ]; then
+    ln -s "$CLAUDE_HOME/.claude/.gemini" "$CLAUDE_HOME/.gemini"
+    chown -h "$PUID:$PGID" "$CLAUDE_HOME/.gemini"
+fi
+
+# ---------- Cursor CLI config symlink (every boot) ----------
+mkdir -p "$CLAUDE_HOME/.claude/.cursor"
+chown "$PUID:$PGID" "$CLAUDE_HOME/.claude/.cursor"
+[ -L "$CLAUDE_HOME/.cursor" ] && [ ! -e "$CLAUDE_HOME/.cursor" ] && rm -f "$CLAUDE_HOME/.cursor"
+if [ ! -e "$CLAUDE_HOME/.cursor" ]; then
+    ln -s "$CLAUDE_HOME/.claude/.cursor" "$CLAUDE_HOME/.cursor"
+    chown -h "$PUID:$PGID" "$CLAUDE_HOME/.cursor"
+fi
+
+# ---------- Persist ~/.claude.json (every boot) ----------
+# Claude Code overwrites symlinks, so we use copy-on-boot/copy-on-start.
+# On restart (file exists): save current to bind mount, then use it
+# On recreation (file gone): restore from bind mount
+# On first boot (neither exists): create default
+if [ -f "$CLAUDE_HOME/.claude.json" ]; then
+    cp "$CLAUDE_HOME/.claude.json" "$CLAUDE_HOME/.claude/.claude.json.persist"
+elif [ -f "$CLAUDE_HOME/.claude/.claude.json.persist" ]; then
+    cp "$CLAUDE_HOME/.claude/.claude.json.persist" "$CLAUDE_HOME/.claude.json"
+    chown "$PUID:$PGID" "$CLAUDE_HOME/.claude.json"
+else
     echo '{"hasCompletedOnboarding":true,"installMethod":"native"}' > "$CLAUDE_HOME/.claude.json"
     chown "$PUID:$PGID" "$CLAUDE_HOME/.claude.json"
 fi
@@ -63,6 +97,12 @@ if [ ! -f "$SENTINEL" ]; then
         echo "[entrypoint] WARNING: bootstrap.sh failed — continuing anyway"
     fi
 fi
+
+# ---------- Background: persist ~/.claude.json every 60s ----------
+(while true; do
+    sleep 60
+    [ -f "$CLAUDE_HOME/.claude.json" ] && cp "$CLAUDE_HOME/.claude.json" "$CLAUDE_HOME/.claude/.claude.json.persist" 2>/dev/null
+done) &
 
 # ---------- Hand off to s6-overlay ----------
 echo "[entrypoint] Starting s6-overlay..."

@@ -32,15 +32,6 @@ fi
 cp "$SOURCE_DIR/claude-memory-${VARIANT}.md" "$CLAUDE_HOME/.claude/CLAUDE.md"
 echo "[bootstrap] Copied CLAUDE.md (${VARIANT} variant)"
 
-# ---------- Pre-create ~/.claude.json ----------
-cat > "$CLAUDE_HOME/.claude.json" <<'EOF'
-{
-  "hasCompletedOnboarding": true,
-  "installMethod": "native"
-}
-EOF
-echo "[bootstrap] Created ~/.claude.json"
-
 # ---------- Git configuration ----------
 GIT_USER_NAME="${GIT_USER_NAME:-HolyClaude User}"
 GIT_USER_EMAIL="${GIT_USER_EMAIL:-noreply@holyclaude.local}"
@@ -48,6 +39,86 @@ runuser -u "$CLAUDE_USER" -- git config --global safe.directory /workspace
 runuser -u "$CLAUDE_USER" -- git config --global user.name "$GIT_USER_NAME"
 runuser -u "$CLAUDE_USER" -- git config --global user.email "$GIT_USER_EMAIL"
 echo "[bootstrap] Configured git as '$GIT_USER_NAME <$GIT_USER_EMAIL>'"
+
+# ---------- Codex CLI default configuration ----------
+if [ ! -f "$CLAUDE_HOME/.codex/config.toml" ]; then
+    cat > "$CLAUDE_HOME/.codex/config.toml" <<'TOML'
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+
+[features]
+codex_hooks = true
+TOML
+    echo "[bootstrap] Created Codex CLI config (on-request approval, workspace-write sandbox, hooks enabled)"
+elif ! grep -q '^\[features\]' "$CLAUDE_HOME/.codex/config.toml"; then
+    printf '\n[features]\ncodex_hooks = true\n' >> "$CLAUDE_HOME/.codex/config.toml"
+    echo "[bootstrap] Added [features] section to existing Codex config"
+fi
+
+# ---------- Codex CLI notification hook ----------
+if [ ! -f "$CLAUDE_HOME/.codex/hooks.json" ]; then
+    cat > "$CLAUDE_HOME/.codex/hooks.json" <<'JSON'
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/local/bin/notify.py stop",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
+JSON
+    echo "[bootstrap] Created Codex CLI notification hook"
+fi
+
+# ---------- Gemini CLI notification hook ----------
+if [ ! -f "$CLAUDE_HOME/.gemini/settings.json" ]; then
+    cat > "$CLAUDE_HOME/.gemini/settings.json" <<'JSON'
+{
+  "hooks": {
+    "SessionEnd": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "name": "notify",
+            "type": "command",
+            "command": "/usr/local/bin/notify.py stop",
+            "timeout": 30000
+          }
+        ]
+      }
+    ]
+  }
+}
+JSON
+    echo "[bootstrap] Created Gemini CLI notification hook"
+fi
+
+# ---------- Cursor CLI hooks (pre-configured for future CLI support) ----------
+if [ ! -f "$CLAUDE_HOME/.cursor/hooks.json" ]; then
+    cat > "$CLAUDE_HOME/.cursor/hooks.json" <<'JSON'
+{
+  "version": 1,
+  "hooks": {
+    "stop": [
+      {
+        "type": "command",
+        "command": "/usr/local/bin/notify.py stop",
+        "timeout": 30
+      }
+    ]
+  }
+}
+JSON
+    echo "[bootstrap] Created Cursor CLI hooks (pre-configured)"
+fi
 
 # ---------- Fix ownership ----------
 chown -R "$PUID:$PGID" "$CLAUDE_HOME/.claude"

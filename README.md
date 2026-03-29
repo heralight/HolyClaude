@@ -1,3 +1,5 @@
+🌍 **English** | [Español](docs/translations/README.es.md) | [Français](docs/translations/README.fr.md) | [Italiano](docs/translations/README.it.md) | [Português](docs/translations/README.pt.md) | [Deutsch](docs/translations/README.de.md) | [Русский](docs/translations/README.ru.md) | [हिन्दी](docs/translations/README.hi.md) | [中文](docs/translations/README.zh.md) | [日本語](docs/translations/README.ja.md) | [한국어](docs/translations/README.ko.md)
+
 # <img src="https://github.com/CoderLuii/HolyClaude/blob/master/assets/logo.png?raw=true" alt="HolyClaude" width="39" valign="bottom"> <a name="top"></a>HolyClaude
 
 <div align="center">
@@ -428,7 +430,7 @@ These values are read by Docker Compose on the host. They are not container envi
 | **Performance** | Node.js memory ceiling | Only if you hit OOM errors on large projects |
 | **User mapping** | File permissions between container and host | If you get "permission denied" (`id -u` and `id -g` on your host) |
 | **SMB/CIFS** | File watcher polling mode | Only if your volumes live on a NAS or network share |
-| **Notifications** | Push alerts via Apprise (Discord, Telegram, Slack, Email, 100+ services) | If you want to walk away and know when Claude is done |
+| **Notifications** | Push alerts via Apprise (Discord, Telegram, Slack, Email, 100+ services) | If you want to walk away and know when your AI agents are done |
 | **AI providers** | API keys for Gemini, Codex, Cursor, Junie, OpenCode | If you want to use AI CLIs other than Claude |
 
 > **Every single environment variable is optional.** The container runs perfectly with just `TZ=UTC`. Everything else has sensible defaults or is handled through the web UI.
@@ -793,7 +795,7 @@ This is how I personally run it. Edit `./data/claude/settings.json` on your host
 
 ## :bell: Notifications
 
-Walk away from your computer and know when Claude is done. Uses [Apprise](https://github.com/caronc/apprise) for notifications — supports 100+ services including Discord, Telegram, Slack, Email, Pushover, Gotify, and more.
+Walk away from your computer and know when your AI agents are done. Claude Code, Codex, and Gemini CLI all send notifications when a task completes. Uses [Apprise](https://github.com/caronc/apprise) — supports 100+ services including Discord, Telegram, Slack, Email, Pushover, Gotify, and more.
 
 **To enable:**
 
@@ -811,7 +813,7 @@ See [configuration docs](docs/configuration.md#notifications-apprise) for all su
 **Events that trigger notifications:**
 | Event | What happened |
 |-------|--------------|
-| `stop` | Claude finished the current task |
+| `stop` | Claude Code, Codex, or Gemini finished the current task |
 | `error` | A tool use failure occurred |
 
 > Completely silent when not configured. No `NOTIFY_*` vars set? No flag file? Zero network calls. Zero log spam. Zero overhead.
