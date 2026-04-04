@@ -310,7 +310,7 @@ Même image, chaque paramètre exposé. Copiez ce bloc entier dans un fichier `d
 # ==============================================================================
 # HolyClaude — Full Configuration
 # All options documented inline.
-# Detailed docs: https://github.com/CoderLuii/HolyClaude/blob/main/docs/configuration.md
+# Detailed docs: https://github.com/CoderLuii/HolyClaude/blob/master/docs/configuration.md
 # ==============================================================================
 
 services:

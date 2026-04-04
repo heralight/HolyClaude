@@ -4,6 +4,11 @@ All notable changes to HolyClaude will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.1.8] - 04/04/2026
+
+### Fixed
+- Corrected public documentation links that still referenced the non-existent `main` branch, including the Docker Hub description and translated README links to `docs/configuration.md`
+
 ## [1.1.7] - 03/28/2026
 
 ### Added
