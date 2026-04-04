@@ -192,7 +192,7 @@ HolyClaude runs the **official Claude Code CLI** from Anthropic. Your existing a
 |---|---|
 | OpenAI API key for Claude | Different company, different API. OpenAI keys work with the **Codex CLI** (also pre-installed) |
 
-> **ChatGPT Plus/Pro subscribers:** Your subscription works with the **Codex CLI**. Run `codex login --device-auth` inside the container to authenticate with your ChatGPT account.
+> **ChatGPT Plus/Pro subscribers:** Your subscription works with the **Codex CLI**. Run `codex login --device-auth` inside the container to authenticate with your ChatGPT account. If you need Codex's browser callback flow from your host, expose port `1455` in the full compose template below.
 
 ### Other AI CLIs included:
 
@@ -310,7 +310,7 @@ Same image, every knob exposed. Copy this entire block into a `docker-compose.ya
 # ==============================================================================
 # HolyClaude — Full Configuration
 # All options documented inline.
-# Detailed docs: https://github.com/CoderLuii/HolyClaude/blob/main/docs/configuration.md
+# Detailed docs: https://github.com/CoderLuii/HolyClaude/blob/master/docs/configuration.md
 # ==============================================================================
 
 services:
@@ -341,6 +341,7 @@ services:
       # - "5173:5173"                      # Vite
       # - "8787:8787"                      # Wrangler (Cloudflare Workers)
       # - "9229:9229"                      # Node.js debugger
+      # - "1455:1455"                      # Codex auth callback port
     volumes:
       #
       # PERSISTENT DATA
@@ -463,14 +464,13 @@ The complete reference. Every variable, what it defaults to, what it does.
 | `NOTIFY_GOTIFY` | *(unset)* | Gotify URL for notifications |
 | `NOTIFY_URLS` | *(unset)* | Catch-all — comma-separated [Apprise URLs](https://github.com/caronc/apprise/wiki) |
 | `ANTHROPIC_API_KEY` | *(unset)* | Anthropic API key (alternative to web UI OAuth) |
-| `ANTHROPIC_AUTH_TOKEN` | *(unset)* | Anthropic auth token (alternative to API key) |
-| `ANTHROPIC_BASE_URL` | *(unset)* | Custom Anthropic API endpoint (proxies, private deployments) |
+| `ANTHROPIC_AUTH_TOKEN` | *(unset)* | Anthropic auth token (alternative to API key, or set to `ollama` for Ollama) |
+| `ANTHROPIC_BASE_URL` | *(unset)* | Custom Anthropic API endpoint (proxies, private deployments, or Ollama's Anthropic-compatible API) |
 | `CLAUDE_CODE_USE_BEDROCK` | *(unset)* | Set to `1` to use Amazon Bedrock backend |
 | `CLAUDE_CODE_USE_VERTEX` | *(unset)* | Set to `1` to use Google Vertex AI backend |
 | `GEMINI_API_KEY` | *(unset)* | Google Gemini API key |
 | `OPENAI_API_KEY` | *(unset)* | OpenAI API key (for Codex CLI, or use `codex login --device-auth` for ChatGPT subscription) |
 | `CURSOR_API_KEY` | *(unset)* | Cursor API key |
-| `OLLAMA_HOST` | *(unset)* | Ollama endpoint URL (e.g., `http://host.docker.internal:11434`) |
 
 <p align="right">
   <a href="#top">↑ back to top</a>
@@ -632,7 +632,7 @@ Seven AI CLIs. One container. No other Docker image gives you this.
 
 ## :llama: Using Ollama
 
-HolyClaude works with [Ollama](https://ollama.com) as an alternative to an Anthropic subscription. Set two environment variables and use local or cloud models.
+HolyClaude works with [Ollama](https://ollama.com) as an alternative to an Anthropic subscription. The supported setup path is `ANTHROPIC_AUTH_TOKEN=ollama` plus `ANTHROPIC_BASE_URL=<your Ollama endpoint>`.
 
 See the full setup guide: **[docs/ollama.md](docs/ollama.md)**
 
@@ -957,6 +957,8 @@ docker build --build-arg VARIANT=slim -t holyclaude:slim .
 # Build for ARM (Apple Silicon, Raspberry Pi, AWS Graviton)
 docker buildx build --platform linux/arm64 -t holyclaude .
 ```
+
+This source release vendors the patched CloudCLI package under `vendor/artifacts/`, so `docker build` installs that bundled tarball instead of downloading `@siteboon/claude-code-ui` from npm.
 
 Then use `image: holyclaude` instead of `image: coderluii/holyclaude:latest` in your compose file.
 

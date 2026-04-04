@@ -4,6 +4,19 @@ All notable changes to HolyClaude will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.1.9] - 04/04/2026
+
+### Fixed
+- Vendored a patched CloudCLI build into the HolyClaude image so the release no longer depends on waiting for upstream UI/runtime fixes to merge
+- Codex session completion now stays on the active session instead of bouncing back to `new session` after the first prompt
+- Claude auth failures now refresh status after login and surface clearer error messages instead of leaving stale or silent UI state
+- Realtime chat messages now dedupe correctly so duplicate user/thinking rows do not render twice
+- The auth shell no longer steals plain lowercase `c`; the auth URL copy shortcut now requires `Shift+C`
+- The selected thinking mode now persists in the main chat flow instead of resetting after each send
+- Documented Codex callback port `1455` in the full compose/config docs
+- Simplified the supported Ollama path to `ANTHROPIC_AUTH_TOKEN=ollama` plus `ANTHROPIC_BASE_URL=<endpoint>` and tightened troubleshooting guidance
+- Corrected remaining public docs links that still referenced `blob/main/docs/configuration.md`
+
 ## [1.1.8] - 04/04/2026
 
 ### Fixed

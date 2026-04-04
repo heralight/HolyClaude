@@ -1,7 +1,7 @@
 # ==============================================================================
 # HolyClaude — Full Configuration
 # Usage: docker compose -f docker-compose.full.yaml up -d
-# All options documented: https://github.com/CoderLuii/HolyClaude/blob/main/docs/configuration.md
+# All options documented: https://github.com/CoderLuii/HolyClaude/blob/master/docs/configuration.md
 # ==============================================================================
 
 services:
@@ -17,6 +17,8 @@ services:
       - SYS_PTRACE
     security_opt:
       - seccomp=unconfined
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"  # Linux: let the container reach services on the Docker host (e.g., Ollama)
     ports:
       - "${HOLYCLAUDE_HOST_PORT:-3001}:3001"   # CloudCLI web UI
       # --- Uncomment ports as needed ---
@@ -25,6 +27,7 @@ services:
       # - "5173:5173"         # Vite dev
       # - "8787:8787"         # Wrangler dev
       # - "9229:9229"         # Node.js debugger
+      # - "1455:1455"         # Codex auth callback port
     volumes:
       - ${HOLYCLAUDE_HOST_CLAUDE_DIR:-./data/claude}:/home/claude/.claude
       - ${HOLYCLAUDE_HOST_WORKSPACE_DIR:-./workspace}:/workspace
@@ -54,8 +57,8 @@ services:
 
       # --- Anthropic / Claude Code (optional, can also authenticate via web UI) ---
       # - ANTHROPIC_API_KEY=
-      # - ANTHROPIC_AUTH_TOKEN=
-      # - ANTHROPIC_BASE_URL=                    # Custom API endpoint (proxies, private deployments)
+      # - ANTHROPIC_AUTH_TOKEN=                  # Auth token, or set to ollama for Ollama's Anthropic-compatible API
+      # - ANTHROPIC_BASE_URL=                    # Custom API endpoint, or Ollama endpoint (e.g. http://host.docker.internal:11434)
       # - CLAUDE_CODE_USE_BEDROCK=1              # Use Amazon Bedrock as backend
       # - CLAUDE_CODE_USE_VERTEX=1               # Use Google Vertex AI as backend
 
@@ -63,4 +66,3 @@ services:
       # - GEMINI_API_KEY=
       # - OPENAI_API_KEY=
       # - CURSOR_API_KEY=
-      # - OLLAMA_HOST=http://host.docker.internal:11434    # External Ollama endpoint

@@ -84,14 +84,13 @@ Claude Code can authenticate via web UI (OAuth) or `ANTHROPIC_API_KEY`. Other AI
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ANTHROPIC_API_KEY` | (unset) | Anthropic API key (alternative to web UI OAuth) |
-| `ANTHROPIC_AUTH_TOKEN` | (unset) | Anthropic auth token (alternative to API key) |
-| `ANTHROPIC_BASE_URL` | (unset) | Custom Anthropic API endpoint (proxies, private deployments) |
+| `ANTHROPIC_AUTH_TOKEN` | (unset) | Anthropic auth token (alternative to API key). For Ollama, set this to `ollama` |
+| `ANTHROPIC_BASE_URL` | (unset) | Custom Anthropic API endpoint (proxies, private deployments, or Ollama's Anthropic-compatible API) |
 | `CLAUDE_CODE_USE_BEDROCK` | (unset) | Set to `1` to use Amazon Bedrock backend |
 | `CLAUDE_CODE_USE_VERTEX` | (unset) | Set to `1` to use Google Vertex AI backend |
 | `GEMINI_API_KEY` | (unset) | Google Gemini API key |
 | `OPENAI_API_KEY` | (unset) | OpenAI API key |
 | `CURSOR_API_KEY` | (unset) | Cursor API key |
-| `OLLAMA_HOST` | (unset) | Ollama endpoint URL |
 
 ---
 
@@ -123,8 +122,9 @@ Claude Code can authenticate via web UI (OAuth) or `ANTHROPIC_API_KEY`. Other AI
 | `5173` | Vite dev server | Commented out |
 | `8787` | Wrangler dev server | Commented out |
 | `9229` | Node.js debugger | Commented out |
+| `1455` | Codex auth callback | Commented out |
 
-Uncomment additional ports in `docker-compose.full.yaml` as needed.
+Uncomment additional ports in `docker-compose.full.yaml` as needed. If you use Codex's callback flow from your host browser, also uncomment `1455:1455`.
 
 ---
 

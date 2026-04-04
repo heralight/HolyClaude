@@ -167,8 +167,10 @@ RUN if [ "$VARIANT" = "full" ]; then \
     npm i -g opencode-ai; \
     fi
 
+COPY vendor/artifacts/siteboon-claude-code-ui-1.26.3.tgz /tmp/vendor/siteboon-claude-code-ui-1.26.3.tgz
+
 # ---------- CloudCLI (web UI for Claude Code) ----------
-RUN npm i -g @siteboon/claude-code-ui
+RUN npm i -g /tmp/vendor/siteboon-claude-code-ui-1.26.3.tgz && rm -f /tmp/vendor/siteboon-claude-code-ui-1.26.3.tgz
 RUN touch /usr/local/lib/node_modules/@siteboon/claude-code-ui/.env
 
 # ---------- Patch: preserve WebSocket frame type in plugin proxy (Issue #11) ----------
@@ -179,7 +181,7 @@ RUN CLOUDCLI_INDEX="/usr/local/lib/node_modules/@siteboon/claude-code-ui/server/
     sed -i "s/clientWs.on('message', (data) => {/clientWs.on('message', (data, isBinary) => {/" "$CLOUDCLI_INDEX" && \
     sed -i "s/if (upstream.readyState === WebSocket.OPEN) upstream.send(data)/if (upstream.readyState === WebSocket.OPEN) upstream.send(data, { binary: isBinary })/" "$CLOUDCLI_INDEX" && \
     echo "[patch] WebSocket frame type fix applied (both directions)" || \
-    echo "[patch] WARNING: WebSocket pattern not found in CloudCLI v$(npm show @siteboon/claude-code-ui version), skipping patch"
+    echo "[patch] WARNING: WebSocket pattern not found in vendored CloudCLI install, skipping patch"
 
 # ---------- CloudCLI plugins (baked into image) ----------
 USER claude

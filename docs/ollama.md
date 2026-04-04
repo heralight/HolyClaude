@@ -12,35 +12,25 @@ This means you can use HolyClaude with local models (free, unlimited) or Ollama 
 
 ## Setup
 
-Add two environment variables to your existing [Docker Compose file](../docker-compose.yaml). Start from the Quick Start compose and add the `ANTHROPIC_*` variables:
+Use `docker-compose.full.yaml` as the supported Ollama setup path and add the Ollama-specific lines below:
 
 ```yaml
 services:
   holyclaude:
-    image: coderluii/holyclaude:latest
-    container_name: holyclaude
-    restart: unless-stopped
-    shm_size: 2g
-    cap_add:
-      - SYS_ADMIN
-      - SYS_PTRACE
-    security_opt:
-      - seccomp=unconfined
-    ports:
-      - "3001:3001"
-    volumes:
-      - ./data/claude:/home/claude/.claude
-      - ./workspace:/workspace
+    # Linux only — required if you want to use host.docker.internal
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
     environment:
-      - TZ=UTC
       - ANTHROPIC_AUTH_TOKEN=ollama
       - ANTHROPIC_BASE_URL=http://host.docker.internal:11434
 ```
 
 - `ANTHROPIC_AUTH_TOKEN=ollama` is required by Claude Code but not validated by Ollama. Any string works.
 - `ANTHROPIC_BASE_URL` points to your Ollama server. Use `host.docker.internal` to reach the host machine from inside the container, or your server's IP address (e.g., `http://192.168.1.100:11434`).
+- This is the supported HolyClaude path for Ollama. Do not rely on `OLLAMA_HOST` alone for Claude Code.
 
-> **Linux users:** `host.docker.internal` is not available by default on Linux Docker. Either add `extra_hosts: ["host.docker.internal:host-gateway"]` to your compose file, or use your host's LAN IP address directly.
+> **Linux users:** `host.docker.internal` is not available by default on Linux Docker. Keep the `extra_hosts` line above, or replace `ANTHROPIC_BASE_URL` with your host's LAN IP address directly.
 
 Start the container:
 
@@ -119,8 +109,10 @@ For full details, see [Ollama's Anthropic API documentation](https://docs.ollama
 
 **Claude Code can't connect to Ollama:**
 - Verify Ollama is running: `curl http://localhost:11434` on your host (should return "Ollama is running")
-- If Ollama is on a different machine, use its IP instead of `host.docker.internal`
-- Ensure Ollama is listening on all interfaces: `OLLAMA_HOST=0.0.0.0 ollama serve`
+- If Ollama is on the Docker host, make sure `ANTHROPIC_BASE_URL` matches the address you can actually reach from inside the container
+- On Linux, keep `extra_hosts: ["host.docker.internal:host-gateway"]` or use your host's LAN IP instead of `host.docker.internal`
+- If Ollama is on a different machine, use that machine's IP instead of `host.docker.internal`
+- Ensure Ollama is listening on the right interface, for example: `OLLAMA_HOST=0.0.0.0 ollama serve`
 
 **Web Terminal button missing when not logged in to Claude:**
 - This is a known CloudCLI UI limitation. The Web Terminal plugin requires authentication to be active. Use `docker exec -it holyclaude bash` as a workaround.
