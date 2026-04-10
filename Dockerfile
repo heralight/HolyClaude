@@ -183,6 +183,13 @@ RUN CLOUDCLI_INDEX="/usr/local/lib/node_modules/@siteboon/claude-code-ui/server/
     echo "[patch] WebSocket frame type fix applied (both directions)" || \
     echo "[patch] WARNING: WebSocket pattern not found in vendored CloudCLI install, skipping patch"
 
+# patch: preserve Shell tab scroll position across periodic refresh (issue #35)
+RUN CLOUDCLI_BUNDLE="/usr/local/lib/node_modules/@siteboon/claude-code-ui/dist/assets/index-X3ImjnMV.js" && \
+    grep -q 'const B=()=>{v.current?.focus()}' "$CLOUDCLI_BUNDLE" && \
+    perl -pi -e 's/const B=\(\)=>\{v\.current\?\.focus\(\)\}/const B=()=>{const _vp=v.current?.buffer?.active?.viewportY??0;v.current?.focus();v.current?.scrollToLine(_vp)}/g' "$CLOUDCLI_BUNDLE" && \
+    echo "[patch] Shell scroll position fix applied" || \
+    echo "[patch] WARNING: Shell scroll pattern not found in vendored CloudCLI bundle, skipping patch"
+
 # ---------- CloudCLI plugins (baked into image) ----------
 USER claude
 RUN mkdir -p /home/claude/.claude-code-ui/plugins && \

@@ -4,6 +4,11 @@ All notable changes to HolyClaude will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.2.1] - 04/10/2026
+
+### Fixed
+- Shell tab no longer resets scroll position to the top on periodic refresh
+
 ## [1.2.0] - 04/09/2026
 
 ### Added
