@@ -33,7 +33,7 @@ chown "$PUID:$PGID" "$CLAUDE_HOME/.claude" 2>/dev/null || true
 
 # ---------- Ensure /workspace is writable ----------
 # Docker creates missing bind-mount directories as root on the host.
-# Fix the top-level workspace ownership here so the mapped claude user can write.
+# Fix the top-level workspace ownership here so the mapped users can write.
 mkdir -p "$WORKSPACE_DIR"
 if ! runuser -u "$CLAUDE_USER" -- test -w "$WORKSPACE_DIR"; then
     echo "[entrypoint] /workspace is not writable for $CLAUDE_USER — attempting ownership fix"

@@ -130,17 +130,17 @@ Uncomment additional ports in `docker-compose.full.yaml` as needed. If you use C
 
 ## Docker Capabilities
 
-HolyClaude requires these Docker capabilities for Chromium to work:
+HolyClaude requires minimal Docker capabilities. Chromium already runs with
+`--no-sandbox` (set in `CHROMIUM_FLAGS`), so `SYS_ADMIN` and `seccomp=unconfined`
+are not needed:
 
 ```yaml
 cap_add:
-  - SYS_ADMIN      # Chromium sandboxing (namespaces)
   - SYS_PTRACE      # Debugging (strace, lsof)
-security_opt:
-  - seccomp=unconfined  # Chromium syscall requirements
 ```
 
-These are standard for any Chromium-in-Docker setup. Without them, Chromium crashes on startup.
+If you need Chromium's sandbox for additional isolation, re-add `SYS_ADMIN`
+and a custom seccomp profile. See the Chromium-in-Docker documentation for details.
 
 ---
 

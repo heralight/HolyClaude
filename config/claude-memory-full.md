@@ -23,16 +23,16 @@ You are running inside a **HolyClaude Docker container** (full variant). Everyth
 
 Both managed by s6-overlay — they auto-restart on failure.
 
-## Node.js & npm (v22 LTS)
+## Node.js & npm (v22 LTS) + Bun
 
-### Global packages available:
+### Global packages available (via bun):
 - **Languages:** typescript, tsx
-- **Package managers:** pnpm, npm (built-in)
+- **Package managers:** pnpm, bun (also available), npm (built-in)
 - **Build tools:** vite, esbuild
 - **Code quality:** eslint, prettier
 - **Dev servers:** serve, nodemon, http-server
 - **Utilities:** concurrently, dotenv-cli
-- **Deployment:** wrangler (Cloudflare), vercel, netlify-cli, @cloudflare/next-on-pages, az (Azure)
+- **Deployment:** wrangler (Cloudflare), vercel, netlify-cli, @cloudflare/next-on-pages
 - **Databases:** prisma, drizzle-kit
 - **Process management:** pm2
 - **Mobile:** eas-cli (Expo)
@@ -42,11 +42,12 @@ Both managed by s6-overlay — they auto-restart on failure.
 
 ### Installing additional packages:
 ```bash
-npm i -g <package>        # Global install
-npm i <package>           # Project-local install
+bun install -g <package>    # Global install (user-level, preferred over npm -g)
+npm i -g <package>          # Fallback global install
+npm i <package>             # Project-local install
 ```
 
-## Python 3
+## Python 3 + uv
 
 ### Installed packages:
 - **HTTP:** requests, httpx, httpie
@@ -61,11 +62,19 @@ npm i <package>           # Project-local install
 - **Browser:** playwright
 - **Web framework:** fastapi, uvicorn
 
-### Installing additional packages:
+### Package manager: uv
+```bash
+uv <command>                # uv replaces pip and venv
+uv pip install <package>    # Install packages (alias: `pip` → `uv pip`)
+uv run python3 <script>     # Run in uv-managed env (alias: `python` → `uv run python3`)
+uv tool install <package>   # Install user-level CLI tools (uvx equivalent)
+```
+
+### Installing additional packages (fallback):
 ```bash
 pip install --break-system-packages <package>
 ```
-The `--break-system-packages` flag is required (no venv in container context).
+Prefer `uv pip install` over `pip install` when possible. The `--break-system-packages` flag is required for the system pip fallback.
 
 ## AI CLI Providers
 
@@ -82,7 +91,8 @@ The `--break-system-packages` flag is required (no venv in container context).
 ## System Tools
 
 ### Command-line utilities:
-- **Search:** ripgrep (`rg`), fd (`fdfind`), fzf, grep
+- **Search:** ripgrep (`rg`), fd (`fdfind`), fzf, grep, sift
+- **Task runner:** task (Taskfile.dev — installed via `bun install -g @go-task/cli`)
 - **Files:** tree, bat (`batcat` or `bat`), jq, zip/unzip
 - **Network:** curl, wget, httpie, openssh-client
 - **Process:** htop, lsof, strace, iproute2 (`ip`, `ss`)
