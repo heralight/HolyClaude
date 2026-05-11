@@ -6,7 +6,7 @@
 
 services:
   holyclaude:
-    image: coderluii/holyclaude:latest
+    #image: coderluii/holyclaude:latest
     build:
       context: ./
       dockerfile: Dockerfile
