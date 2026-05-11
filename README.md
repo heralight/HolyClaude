@@ -263,10 +263,9 @@ services:
     shm_size: 2g                           # Chromium needs this — don't remove
     network_mode: bridge
     cap_add:
-      - SYS_ADMIN                          # Required: Chromium sandboxing
       - SYS_PTRACE                         # Required: debugging tools
-    security_opt:
-      - seccomp=unconfined                 # Required: Chromium in Docker
+    # SYS_ADMIN and seccomp=unconfined intentionally removed.
+    # Chromium runs with --no-sandbox (configured in CHROMIUM_FLAGS).
     ports:
       - "3001:3001"                        # CloudCLI web UI
     volumes:
@@ -295,7 +294,7 @@ Open `http://localhost:3001`. Create a CloudCLI account. Sign in with your Anthr
 
 **That's the whole setup. You're done.**
 
-> **Why `SYS_ADMIN` + `seccomp=unconfined`?** Chromium needs these to run inside Docker — it's standard for any containerized browser (Playwright docs, Puppeteer docs, every CI pipeline that runs browser tests). Without them, Chromium crashes on startup. This is not a security risk unique to HolyClaude.
+> **Why no `SYS_ADMIN` + `seccomp=unconfined`?** Chromium already runs with `--no-sandbox` (set via `CHROMIUM_FLAGS`), so these extra privileges are not needed. Removing them improves the container's security profile. If you need Chromium's sandbox, re-add `SYS_ADMIN` and a custom seccomp profile.
 
 > **Why `shm_size: 2g`?** Docker gives containers 64MB of shared memory by default. Chromium uses `/dev/shm` heavily for tab rendering. At 64MB, tabs crash randomly. 2GB is the recommended minimum for any Chromium-in-Docker setup.
 
@@ -325,10 +324,9 @@ services:
     shm_size: 2g                           # Chromium shared memory — increase to 4g for heavy browser use
     network_mode: bridge
     cap_add:
-      - SYS_ADMIN                          # Required: Chromium sandboxing
       - SYS_PTRACE                         # Required: debugging tools (strace, lsof)
-    security_opt:
-      - seccomp=unconfined                 # Required: Chromium syscall requirements
+    # SYS_ADMIN and seccomp=unconfined intentionally removed.
+    # Chromium runs with --no-sandbox (configured in CHROMIUM_FLAGS).
     ports:
       #
       # CloudCLI web UI — this is the only port you need.
@@ -567,7 +565,6 @@ The full image includes everything above, plus:
 | `wrangler`, `@cloudflare/next-on-pages` | Cloudflare Workers deployment |
 | `vercel` | Vercel deployment |
 | `netlify-cli` | Netlify deployment |
-| `az` | Azure CLI for cloud deployment and management |
 | `prisma`, `drizzle-kit` | The two most popular Node.js ORMs |
 | `pm2` | Production process manager |
 | `eas-cli` | Expo / React Native builds |

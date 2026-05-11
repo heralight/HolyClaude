@@ -62,8 +62,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     sudo \
     && rm -rf /var/lib/apt/lists/*
 
-# ---------- bubblewrap setuid (Codex CLI sandbox on restricted kernels) ----------
-RUN chmod u+s /usr/bin/bwrap
+# ---------- bubblewrap: setuid intentionally removed for security hardening ----------
+# Codex CLI's sandbox works without setuid in most configurations.
 
 # ---------- Full-only system packages ----------
 RUN if [ "$VARIANT" = "full" ]; then \
@@ -72,11 +72,11 @@ RUN if [ "$VARIANT" = "full" ]; then \
     && rm -rf /var/lib/apt/lists/*; \
     fi
 
-# ---------- Azure CLI (full only) ----------
-RUN if [ "$VARIANT" = "full" ]; then \
-    curl -sL https://aka.ms/InstallAzureCLIDeb | bash \
-    && rm -rf /var/lib/apt/lists/*; \
-    fi
+# ---------- Azure CLI  ----------
+# RUN if [ "$VARIANT" = "full" ]; then \
+#     curl -sL https://aka.ms/InstallAzureCLIDeb | bash \
+#     && rm -rf /var/lib/apt/lists/*; \
+#     fi
 
 # ---------- GitHub CLI ----------
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
@@ -94,30 +94,40 @@ RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 # ---------- Create claude user ----------
 # node:22-bookworm-slim already has UID 1000 as 'node' — rename it to 'claude'
 RUN usermod -l claude -d /home/claude -m node && \
-    groupmod -n claude node && \
-    echo "claude ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/claude && \
-    chmod 0440 /etc/sudoers.d/claude
+    groupmod -n claude node
 
-# ---------- Claude Code CLI (native installer) ----------
+# ---------- bun (JavaScript runtime) ----------
+# Installed via npm for reliability (base image node:22 has npm built-in).
+# BUN_INSTALL points to ~/.bun so bun install -g writes user-scoped packages.
+RUN npm install -g bun && \
+    mkdir -p /home/claude/.bun/bin && \
+    ln -sf /usr/local/bin/bun /home/claude/.bun/bin/bun && \
+    chown -R claude:claude /home/claude/.bun
+ENV BUN_INSTALL=/home/claude/.bun \
+    PATH="/home/claude/.bun/bin:${PATH}"
+
+# ---------- Claude Code CLI (via bun) ----------
 # CRITICAL: WORKDIR must be non-root-owned or the installer hangs
 WORKDIR /workspace
 USER claude
-RUN curl -fsSL https://claude.ai/install.sh | bash
+RUN /home/claude/.bun/bin/bun install -g @anthropic-ai/claude-code
 USER root
-ENV PATH="/home/claude/.local/bin:${PATH}"
 
-# ---------- npm global packages (slim — always installed) ----------
-RUN npm i -g \
+# ---------- Global tools via bun (slim — always installed) ----------
+USER claude
+RUN /home/claude/.bun/bin/bun install -g \
     typescript tsx \
     pnpm \
     vite esbuild \
     eslint prettier \
     serve nodemon concurrently \
     dotenv-cli
+USER root
 
-# ---------- npm global packages (full only) ----------
+# ---------- Global tools via bun (full only) ----------
+USER claude
 RUN if [ "$VARIANT" = "full" ]; then \
-    npm i -g \
+    /home/claude/.bun/bin/bun install -g \
       wrangler vercel netlify-cli \
       pm2 \
       prisma drizzle-kit \
@@ -126,6 +136,7 @@ RUN if [ "$VARIANT" = "full" ]; then \
       sharp-cli json-server http-server \
       @marp-team/marp-cli @cloudflare/next-on-pages; \
     fi
+USER root
 
 # ---------- Python packages (slim — always installed) ----------
 RUN pip install --no-cache-dir --break-system-packages \
@@ -141,7 +152,7 @@ RUN pip install --no-cache-dir --break-system-packages \
 # ---------- Python packages (full only) ----------
 RUN if [ "$VARIANT" = "full" ]; then \
     pip install --no-cache-dir --break-system-packages \
-      reportlab weasyprint cairosvg fpdf2 PyMuPDF pdfkit img2pdf \
+      reportlab weasyprint cairosvg fpdf2 PyMuPDF pdfkit img2pdf markitdown \
       xlsxwriter xlrd \
       matplotlib seaborn \
       python-pptx \
@@ -149,8 +160,12 @@ RUN if [ "$VARIANT" = "full" ]; then \
       httpie; \
     fi
 
-# ---------- AI CLI providers ----------
-RUN npm i -g @google/gemini-cli @openai/codex task-master-ai
+# ---------- AI CLI providers (via bun, user-level) ----------
+USER claude
+RUN /home/claude/.bun/bin/bun install -g @google/gemini-cli @openai/codex task-master-ai
+USER root
+
+# ---------- Cursor CLI (native installer — no bun/npm package) ----------
 USER claude
 RUN curl -fsSL https://cursor.com/install | bash
 USER root
@@ -162,10 +177,26 @@ RUN if [ "$VARIANT" = "full" ]; then \
     fi
 USER root
 
-# ---------- OpenCode CLI (full only) ----------
+# ---------- OpenCode CLI (full only, via bun) ----------
+USER claude
 RUN if [ "$VARIANT" = "full" ]; then \
-    npm i -g opencode-ai; \
+    /home/claude/.bun/bin/bun install -g opencode-ai; \
     fi
+USER root
+
+# ---------- uv (Python package manager, user-level) ----------
+USER claude
+RUN curl -fsSL https://astral.sh/uv/install.sh | bash
+USER root
+RUN mkdir -p /home/claude/.bashrc.d && \
+    chown claude:claude /home/claude/.bashrc.d && \
+    echo 'alias pip="uv pip"' >> /home/claude/.bashrc && \
+    echo 'alias python="uv run python3"' >> /home/claude/.bashrc
+
+# ---------- bun global tools (sift search, go-task) ----------
+USER claude
+RUN /home/claude/.bun/bin/bun install -g sift @go-task/cli
+USER root
 
 COPY vendor/artifacts/siteboon-claude-code-ui-1.26.3.tgz /tmp/vendor/siteboon-claude-code-ui-1.26.3.tgz
 
@@ -229,9 +260,9 @@ RUN CLOUDCLI_BUNDLE="/usr/local/lib/node_modules/@siteboon/claude-code-ui/dist/a
 USER claude
 RUN mkdir -p /home/claude/.claude-code-ui/plugins && \
     git clone --depth 1 https://github.com/cloudcli-ai/cloudcli-plugin-starter.git /home/claude/.claude-code-ui/plugins/project-stats && \
-    cd /home/claude/.claude-code-ui/plugins/project-stats && npm install && npm run build && \
+    cd /home/claude/.claude-code-ui/plugins/project-stats && bun install && bun run build && \
     git clone --depth 1 https://github.com/cloudcli-ai/cloudcli-plugin-terminal.git /home/claude/.claude-code-ui/plugins/web-terminal && \
-    cd /home/claude/.claude-code-ui/plugins/web-terminal && npm install && npm run build && \
+    cd /home/claude/.claude-code-ui/plugins/web-terminal && bun install && bun run build && \
     echo '{"project-stats":{"name":"project-stats","source":"https://github.com/cloudcli-ai/cloudcli-plugin-starter","enabled":true},"web-terminal":{"name":"web-terminal","source":"https://github.com/cloudcli-ai/cloudcli-plugin-terminal","enabled":true}}' > /home/claude/.claude-code-ui/plugins.json
 USER root
 

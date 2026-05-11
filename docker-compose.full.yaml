@@ -13,10 +13,10 @@ services:
     shm_size: 2g
     network_mode: bridge
     cap_add:
-      - SYS_ADMIN
       - SYS_PTRACE
-    security_opt:
-      - seccomp=unconfined
+    # SYS_ADMIN and seccomp=unconfined intentionally removed.
+    # Chromium runs with --no-sandbox (configured in CHROMIUM_FLAGS).
+    # This improves the container's security profile.
     # extra_hosts:
     #   - "host.docker.internal:host-gateway"  # Linux: let the container reach services on the Docker host (e.g., Ollama)
     ports:

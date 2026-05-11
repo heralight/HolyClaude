@@ -7,20 +7,23 @@
 services:
   holyclaude:
     image: coderluii/holyclaude:latest
+    build:
+      context: ./
+      dockerfile: Dockerfile
     container_name: holyclaude
     hostname: holyclaude
     restart: unless-stopped
     shm_size: 2g
     network_mode: bridge
     cap_add:
-      - SYS_ADMIN      # Required for Chromium sandboxing
       - SYS_PTRACE      # Required for debugging
-    security_opt:
-      - seccomp=unconfined  # Required for Chromium in Docker
+    # SYS_ADMIN and seccomp=unconfined intentionally removed.
+    # Chromium runs with --no-sandbox (configured in CHROMIUM_FLAGS).
+    # This improves the container's security profile.
     ports:
       - "3001:3001"     # CloudCLI web UI
     volumes:
-      - ./data/claude:/home/claude/.claude
-      - ./workspace:/workspace
+      - ./data/claude:/home/claude/.claude:Z
+      - ./workspace:/workspace:Z
     environment:
       - TZ=UTC          # Change to your timezone
