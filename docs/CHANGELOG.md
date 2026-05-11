@@ -4,6 +4,30 @@ All notable changes to HolyClaude will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Security
+- Removed `SYS_ADMIN` and `seccomp=unconfined` from compose files (Chromium uses `--no-sandbox`)
+- Removed `chmod u+s /usr/bin/bwrap` (setuid removed for hardening)
+- Removed `NOPASSWD:ALL` for the `claude` user
+
+
+### Changed
+- All npm global packages migrated from `npm i -g` (root) to `bun install -g` (user `claude`)
+- Claude Code CLI installed via `bun install -g @anthropic-ai/claude-code` (user `claude`) instead of `curl | bash`
+- AI CLI providers (gemini, codex, task-master, opencode) installed via `bun install -g` (user `claude`)
+- CloudCLI installed via `bun install -g @cloudcli-ai/cloudcli` (user `claude`) instead of vendored tarball
+- CloudCLI binary renamed from `claude-code-ui` to `cloudcli`
+
+### Added
+- `bun` — JavaScript runtime, installed via npm, all global tooling scoped to user `claude`
+- `uv` — Python package manager, installed user-level (user `claude`), with aliases `pip` → `uv pip`, `python` → `uv run python3`
+- `sift` — fast search tool, installed via `bun install -g` (user `claude`)
+- `@go-task/cli` — Taskfile.dev runner, installed via `bun install -g` (user `claude`)
+
+### Removed
+- Vendored tarball `vendor/artifacts/siteboon-claude-code-ui-*.tgz`
+
 ## [1.2.2] - 04/10/2026
 
 ### Fixed
