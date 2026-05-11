@@ -39,7 +39,7 @@ RUN S6_ARCH=$(case "$TARGETARCH" in arm64) echo "aarch64";; *) echo "x86_64";; e
 # ---------- System packages (always installed) ----------
 RUN apt-get update && apt-get install -y --no-install-recommends \
     # Core utilities
-    git curl wget jq ripgrep fd-find unzip zip tree tmux fzf bat bubblewrap \
+    git curl wget jq nano vim ripgrep fd-find unzip zip tree tmux fzf bat bubblewrap \
     # Build tools
     build-essential pkg-config python3 python3-pip python3-venv \
     # Browser (Playwright/Puppeteer)
@@ -99,19 +99,32 @@ RUN usermod -l claude -d /home/claude -m node && \
 # ---------- bun (JavaScript runtime) ----------
 # Installed via npm for reliability (base image node:22 has npm built-in).
 # BUN_INSTALL points to ~/.bun so bun install -g writes user-scoped packages.
-RUN npm install -g bun && \
-    mkdir -p /home/claude/.bun/bin && \
+RUN npm install -g bun
+
+USER claude
+RUN mkdir -p /home/claude/.bun/bin && \
     ln -sf /usr/local/bin/bun /home/claude/.bun/bin/bun && \
     chown -R claude:claude /home/claude/.bun
 ENV BUN_INSTALL=/home/claude/.bun \
     PATH="/home/claude/.bun/bin:${PATH}"
+
+# ---------- uv (Python package manager, user-level) ----------
+USER claude
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+WORKDIR /home/claude
+RUN uv venv /home/claude/.venv
+ENV PATH="/home/claude/.venv/bin:$PATH"
+RUN echo 'alias pip="uv pip"' >> /home/claude/.bashrc && \
+    echo 'alias python="uv run python3"' >> /home/claude/.bashrc
+
+
 
 # ---------- Claude Code CLI (via bun) ----------
 # CRITICAL: WORKDIR must be non-root-owned or the installer hangs
 WORKDIR /workspace
 USER claude
 RUN /home/claude/.bun/bin/bun install -g @anthropic-ai/claude-code
-USER root
 
 # ---------- Global tools via bun (slim — always installed) ----------
 USER claude
@@ -136,10 +149,11 @@ RUN if [ "$VARIANT" = "full" ]; then \
       sharp-cli json-server http-server \
       @marp-team/marp-cli @cloudflare/next-on-pages; \
     fi
-USER root
+
+USER claude
 
 # ---------- Python packages (slim — always installed) ----------
-RUN pip install --no-cache-dir --break-system-packages \
+RUN uv pip install --no-cache-dir --break-system-packages \
     requests httpx beautifulsoup4 lxml \
     Pillow \
     pandas numpy \
@@ -151,7 +165,7 @@ RUN pip install --no-cache-dir --break-system-packages \
 
 # ---------- Python packages (full only) ----------
 RUN if [ "$VARIANT" = "full" ]; then \
-    pip install --no-cache-dir --break-system-packages \
+    uv pip install --no-cache-dir --break-system-packages \
       reportlab weasyprint cairosvg fpdf2 PyMuPDF pdfkit img2pdf markitdown \
       xlsxwriter xlrd \
       matplotlib seaborn \
@@ -184,26 +198,26 @@ RUN if [ "$VARIANT" = "full" ]; then \
     fi
 USER root
 
-# ---------- uv (Python package manager, user-level) ----------
-USER claude
-RUN curl -fsSL https://astral.sh/uv/install.sh | bash
-USER root
-RUN mkdir -p /home/claude/.bashrc.d && \
-    chown claude:claude /home/claude/.bashrc.d && \
-    echo 'alias pip="uv pip"' >> /home/claude/.bashrc && \
-    echo 'alias python="uv run python3"' >> /home/claude/.bashrc
+
 
 # ---------- bun global tools (sift search, go-task) ----------
 USER claude
 RUN /home/claude/.bun/bin/bun install -g sift @go-task/cli
-USER root
+#USER root
 
 # ---------- CloudCLI (web UI for Claude Code) — npm package, latest ----------
-RUN bun install -g @cloudcli-ai/cloudcli
-RUN touch /home/claude/.bun/install/global/node_modules/@cloudcli-ai/cloudcli/.env
+#RUN bun install -g @cloudcli-ai/cloudcli
+RUN bunx @cloudcli-ai/cloudcli  --version
+
+RUN touch /tmp/bunx-1000-@cloudcli-ai/cloudcli@latest/node_modules/@cloudcli-ai/cloudcli/.env
+
+# # ---------- Patch: Chokidar readdirp ESM/CJS interop for Node startup ----------
+# RUN find /home/claude/.bun/install/cache -path '*/chokidar*@@@*/esm/index.js' -type f \
+#     -exec sed -i "s/import { readdirp } from 'readdirp';/import readdirp from 'readdirp';/" {} \; && \
+#     echo "[patch] Chokidar readdirp import fix applied"
 
 # ---------- Patch: preserve WebSocket frame type in plugin proxy (Issue #11) ----------
-RUN CLOUDCLI_INDEX="/home/claude/.bun/install/global/node_modules/@cloudcli-ai/cloudcli/server/index.js" && \
+RUN CLOUDCLI_INDEX="/tmp/bunx-1000-@cloudcli-ai/cloudcli@latest/node_modules/@cloudcli-ai/cloudcli/server/index.js" && \
     grep -q "upstream.on('message', (data) =>" "$CLOUDCLI_INDEX" && \
     sed -i "s/upstream.on('message', (data) => {/upstream.on('message', (data, isBinary) => {/" "$CLOUDCLI_INDEX" && \
     sed -i "s/if (clientWs.readyState === WebSocket.OPEN) clientWs.send(data)/if (clientWs.readyState === WebSocket.OPEN) clientWs.send(data, { binary: isBinary })/" "$CLOUDCLI_INDEX" && \
@@ -212,47 +226,47 @@ RUN CLOUDCLI_INDEX="/home/claude/.bun/install/global/node_modules/@cloudcli-ai/c
     echo "[patch] WebSocket frame type fix applied (both directions)" || \
     echo "[patch] WARNING: WebSocket pattern not found in vendored CloudCLI install, skipping patch"
 
-# patch: preserve Shell tab scroll position across periodic refresh (issue #35)
-RUN CLOUDCLI_BUNDLE="/home/claude/.bun/install/global/node_modules/@cloudcli-ai/cloudcli/dist/assets/index-X3ImjnMV.js" && \
-    grep -q 'const B=()=>{v.current?.focus()}' "$CLOUDCLI_BUNDLE" && \
-    perl -pi -e 's/const B=\(\)=>\{v\.current\?\.focus\(\)\}/const B=()=>{const _vp=v.current?.buffer?.active?.viewportY??0;v.current?.focus();v.current?.scrollToLine(_vp)}/g' "$CLOUDCLI_BUNDLE" && \
-    echo "[patch] Shell scroll position fix applied" || \
-    echo "[patch] WARNING: Shell scroll pattern not found in vendored CloudCLI bundle, skipping patch"
+# # patch: preserve Shell tab scroll position across periodic refresh (issue #35)
+# RUN CLOUDCLI_BUNDLE="/home/claude/.bun/install/global/node_modules/@cloudcli-ai/cloudcli/dist/assets/index-X3ImjnMV.js" && \
+#     grep -q 'const B=()=>{v.current?.focus()}' "$CLOUDCLI_BUNDLE" && \
+#     perl -pi -e 's/const B=\(\)=>\{v\.current\?\.focus\(\)\}/const B=()=>{const _vp=v.current?.buffer?.active?.viewportY??0;v.current?.focus();v.current?.scrollToLine(_vp)}/g' "$CLOUDCLI_BUNDLE" && \
+#     echo "[patch] Shell scroll position fix applied" || \
+#     echo "[patch] WARNING: Shell scroll pattern not found in vendored CloudCLI bundle, skipping patch"
 
-# patch v1.2.2-1: commands.js expose newModel in spawn args (issue #36)
-RUN CLOUDCLI_COMMANDS="/home/claude/.bun/install/global/node_modules/@cloudcli-ai/cloudcli/server/routes/commands.js" && \
-    grep -q 'message: args.length > 0' "$CLOUDCLI_COMMANDS" && \
-    perl -pi -e 's/^(\s+)(message: args\.length > 0)/$1newModel: args.length > 0 ? args[0] : null,\n$1$2/' "$CLOUDCLI_COMMANDS" && \
-    echo "[patch] commands.js newModel field added" || \
-    echo "[patch] WARNING: commands.js newModel pattern not found, skipping patch"
+# # patch v1.2.2-1: commands.js expose newModel in spawn args (issue #36)
+# RUN CLOUDCLI_COMMANDS="/tmp/bunx-1000-@cloudcli-ai/cloudcli@latest/node_modules/@cloudcli-ai/cloudcli/server/routes/commands.js" && \
+#     grep -q 'message: args.length > 0' "$CLOUDCLI_COMMANDS" && \
+#     perl -pi -e 's/^(\s+)(message: args\.length > 0)/$1newModel: args.length > 0 ? args[0] : null,\n$1$2/' "$CLOUDCLI_COMMANDS" && \
+#     echo "[patch] commands.js newModel field added" || \
+#     echo "[patch] WARNING: commands.js newModel pattern not found, skipping patch"
 
-# patch v1.2.2-2: bundle expose setClaudeModel in claudeModel context spread (issue #36)
-RUN CLOUDCLI_BUNDLE="/home/claude/.bun/install/global/node_modules/@cloudcli-ai/cloudcli/dist/assets/index-X3ImjnMV.js" && \
-    grep -q 'claudeModel:W,codexModel:V' "$CLOUDCLI_BUNDLE" && \
-    perl -pi -e 's/\QclaudeModel:W,codexModel:V\E/claudeModel:W,setClaudeModel:L,codexModel:V/g' "$CLOUDCLI_BUNDLE" && \
-    echo "[patch] bundle setClaudeModel context spread applied" || \
-    echo "[patch] WARNING: bundle claudeModel:W pattern not found, skipping patch"
+# # patch v1.2.2-2: bundle expose setClaudeModel in claudeModel context spread (issue #36)
+# RUN CLOUDCLI_BUNDLE="/home/claude/.bun/install/global/node_modules/@cloudcli-ai/cloudcli/dist/assets/index-X3ImjnMV.js" && \
+#     grep -q 'claudeModel:W,codexModel:V' "$CLOUDCLI_BUNDLE" && \
+#     perl -pi -e 's/\QclaudeModel:W,codexModel:V\E/claudeModel:W,setClaudeModel:L,codexModel:V/g' "$CLOUDCLI_BUNDLE" && \
+#     echo "[patch] bundle setClaudeModel context spread applied" || \
+#     echo "[patch] WARNING: bundle claudeModel:W pattern not found, skipping patch"
 
-# patch v1.2.2-3: bundle wire setClaudeModel:lS2 into cursorModel destructure (issue #36)
-RUN CLOUDCLI_BUNDLE="/home/claude/.bun/install/global/node_modules/@cloudcli-ai/cloudcli/dist/assets/index-X3ImjnMV.js" && \
-    grep -q 'cursorModel:o,claudeModel:l,codexModel:c' "$CLOUDCLI_BUNDLE" && \
-    perl -pi -e 's/\QcursorModel:o,claudeModel:l,codexModel:c\E/cursorModel:o,claudeModel:l,setClaudeModel:lS2,codexModel:c/g' "$CLOUDCLI_BUNDLE" && \
-    echo "[patch] bundle setClaudeModel:lS2 destructure applied" || \
-    echo "[patch] WARNING: bundle cursorModel destructure pattern not found, skipping patch"
+# # patch v1.2.2-3: bundle wire setClaudeModel:lS2 into cursorModel destructure (issue #36)
+# RUN CLOUDCLI_BUNDLE="/home/claude/.bun/install/global/node_modules/@cloudcli-ai/cloudcli/dist/assets/index-X3ImjnMV.js" && \
+#     grep -q 'cursorModel:o,claudeModel:l,codexModel:c' "$CLOUDCLI_BUNDLE" && \
+#     perl -pi -e 's/\QcursorModel:o,claudeModel:l,codexModel:c\E/cursorModel:o,claudeModel:l,setClaudeModel:lS2,codexModel:c/g' "$CLOUDCLI_BUNDLE" && \
+#     echo "[patch] bundle setClaudeModel:lS2 destructure applied" || \
+#     echo "[patch] WARNING: bundle cursorModel destructure pattern not found, skipping patch"
 
-# patch v1.2.2-4: bundle apply newModel on SSE model event (issue #36)
-RUN CLOUDCLI_BUNDLE="/home/claude/.bun/install/global/node_modules/@cloudcli-ai/cloudcli/dist/assets/index-X3ImjnMV.js" && \
-    grep -q 'case"model":k({type:"assistant"' "$CLOUDCLI_BUNDLE" && \
-    perl -pi -e 's/\Qcase"model":k({type:"assistant"\E/case"model":me.newModel\&\&lS2\&\&(lS2(me.newModel),localStorage.setItem("claude-model",me.newModel));k({type:"assistant"/g' "$CLOUDCLI_BUNDLE" && \
-    echo "[patch] bundle SSE model event handler applied" || \
-    echo "[patch] WARNING: bundle case\"model\" pattern not found, skipping patch"
+# # patch v1.2.2-4: bundle apply newModel on SSE model event (issue #36)
+# RUN CLOUDCLI_BUNDLE="/home/claude/.bun/install/global/node_modules/@cloudcli-ai/cloudcli/dist/assets/index-X3ImjnMV.js" && \
+#     grep -q 'case"model":k({type:"assistant"' "$CLOUDCLI_BUNDLE" && \
+#     perl -pi -e 's/\Qcase"model":k({type:"assistant"\E/case"model":me.newModel\&\&lS2\&\&(lS2(me.newModel),localStorage.setItem("claude-model",me.newModel));k({type:"assistant"/g' "$CLOUDCLI_BUNDLE" && \
+#     echo "[patch] bundle SSE model event handler applied" || \
+#     echo "[patch] WARNING: bundle case\"model\" pattern not found, skipping patch"
 
-# patch v1.2.2-5: bundle add custom model option to select (issue #36)
-RUN CLOUDCLI_BUNDLE="/home/claude/.bun/install/global/node_modules/@cloudcli-ai/cloudcli/dist/assets/index-X3ImjnMV.js" && \
-    grep -q 'children:N.OPTIONS.map(({value:C,label:j})=>s.jsx("option",{value:C,children:j},C+j))}' "$CLOUDCLI_BUNDLE" && \
-    perl -pi -e 's/\Qchildren:N.OPTIONS.map(({value:C,label:j})=>s.jsx("option",{value:C,children:j},C+j))}\E/children:[...N.OPTIONS.map(({value:C,label:j})=>s.jsx("option",{value:C,children:j},C+j)),!N.OPTIONS.some(C=>C.value===k)\&\&k\&\&s.jsx("option",{value:k,children:k},k+"custom")].filter(Boolean)}/g' "$CLOUDCLI_BUNDLE" && \
-    echo "[patch] bundle custom model select option applied" || \
-    echo "[patch] WARNING: bundle custom model select pattern not found, skipping patch"
+# # patch v1.2.2-5: bundle add custom model option to select (issue #36)
+# RUN CLOUDCLI_BUNDLE="/home/claude/.bun/install/global/node_modules/@cloudcli-ai/cloudcli/dist/assets/index-X3ImjnMV.js" && \
+#     grep -q 'children:N.OPTIONS.map(({value:C,label:j})=>s.jsx("option",{value:C,children:j},C+j))}' "$CLOUDCLI_BUNDLE" && \
+#     perl -pi -e 's/\Qchildren:N.OPTIONS.map(({value:C,label:j})=>s.jsx("option",{value:C,children:j},C+j))}\E/children:[...N.OPTIONS.map(({value:C,label:j})=>s.jsx("option",{value:C,children:j},C+j)),!N.OPTIONS.some(C=>C.value===k)\&\&k\&\&s.jsx("option",{value:k,children:k},k+"custom")].filter(Boolean)}/g' "$CLOUDCLI_BUNDLE" && \
+#     echo "[patch] bundle custom model select option applied" || \
+#     echo "[patch] WARNING: bundle custom model select pattern not found, skipping patch"
 
 # ---------- CloudCLI plugins (baked into image) ----------
 USER claude
