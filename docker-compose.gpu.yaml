@@ -1,0 +1,21 @@
+# ==============================================================================
+# HolyClaude — Quick Start
+# Just run: docker compose up -d
+# Then open: http://localhost:3001
+# ==============================================================================
+
+services:
+  holyclaude:
+    #image: coderluii/holyclaude:latest
+    build:
+      context: ./
+      dockerfile: Dockerfile.gpu
+    devices:
+      - nvidia.com/gpu=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

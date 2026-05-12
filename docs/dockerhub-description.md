@@ -35,6 +35,17 @@ docker compose up -d
 
 That's it. Open your browser, sign in, start building.
 
+## GPU Build
+
+Need CUDA/NVIDIA GPU access? Build the GPU variant locally with `Dockerfile.gpu` and the Compose override:
+
+```bash
+docker compose -f docker-compose.yaml -f docker-compose.gpu.yaml up -d --build
+docker compose -f docker-compose.yaml -f docker-compose.gpu.yaml exec holyclaude nvidia-smi
+```
+
+The GPU build uses an NVIDIA CUDA runtime base image and keeps the same HolyClaude tooling, CloudCLI web UI, Xvfb, volumes, and `VARIANT=full|slim` behavior.
+
 ## What's Inside
 
 🤖 **7 AI CLIs** — Claude Code, Gemini CLI, OpenAI Codex, Cursor, TaskMaster AI, Junie, OpenCode
@@ -55,6 +66,7 @@ That's it. Open your browser, sign in, start building.
 |-----|-------------|------|
 | `latest` | Full image — everything pre-installed, zero wait | ~3 GB |
 | `slim` | Core tools only — smaller download, extras install on demand | ~1.5 GB |
+| local GPU build | CUDA/NVIDIA runtime image built from `Dockerfile.gpu` | host-dependent |
 | `X.Y.Z` | Full image, pinned version | ~3 GB |
 | `X.Y.Z-slim` | Slim image, pinned version | ~1.5 GB |
 

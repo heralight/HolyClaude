@@ -6,7 +6,7 @@ You are running inside a **HolyClaude Docker container** (full variant). Everyth
 
 ## Environment Overview
 
-- **OS:** Debian Bookworm (slim) inside Docker
+- **OS:** Debian Trixie (slim) inside Docker
 - **User:** `claude` (UID/GID configurable via PUID/PGID)
 - **Working directory:** `/workspace` (bind-mounted from host)
 - **Home directory:** `/home/claude`
