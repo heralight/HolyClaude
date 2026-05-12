@@ -123,6 +123,7 @@ fi
 # ---------- Fix ownership ----------
 chown -R "$PUID:$PGID" "$CLAUDE_HOME/.claude"
 chown "$PUID:$PGID" "$CLAUDE_HOME/.claude.json"
+chown -R "$PUID:$PGID" "$CLAUDE_HOME/.cloudcli"
 
 # ---------- Create sentinel ----------
 touch "$CLAUDE_HOME/.claude/.holyclaude-bootstrapped"
