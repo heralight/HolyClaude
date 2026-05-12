@@ -24,7 +24,7 @@ HolyClaude is a single Docker container running multiple supervised services. Th
 │                                                  │
 │  s6-overlay (PID 1)                              │
 │    ├── cloudcli (longrun)                        │
-│    │     └── claude-code-ui --port 3001          │
+│    │     └── cloudcli --port 3001               │
 │    └── xvfb (longrun)                            │
 │          └── Xvfb :99 -screen 0 1920x1080x24    │
 │                                                  │
@@ -85,7 +85,7 @@ s6's `s6-setuidgid` runs services with a clean environment. Docker-compose envir
 ```sh
 #!/bin/sh
 cd /workspace
-exec s6-setuidgid claude env HOME=/home/claude NODE_OPTIONS=--no-deprecation WORKSPACES_ROOT=/workspace claude-code-ui --port 3001
+exec s6-setuidgid claude  bunx @cloudcli-ai/cloudcli --port 3001
 ```
 
 - Runs as user `claude` (not root)
@@ -152,10 +152,10 @@ ARG VARIANT=full
 
 The variant is stored at build time in `/etc/holyclaude-variant`. Bootstrap reads this file to copy the correct memory template.
 
-| Variant | npm packages | pip packages | apt packages |
-|---------|-------------|-------------|-------------|
-| `full` | All | All | All |
-| `slim` | Core only | Core only | No pandoc/ffmpeg/libvips |
+| Variant | JS/TS packages | Python packages | System packages |
+|---------|---------------|----------------|----------------|
+| `full` | All (bun) + CloudCLI (bunx) | All (uv) | All (apt) |
+| `slim` | Core only (bun) + CloudCLI (bunx) | Core only (uv) | No pandoc/ffmpeg/libvips (apt) |
 
 See [What's Inside](../README.md#rocket-whats-inside) for the complete package lists.
 
