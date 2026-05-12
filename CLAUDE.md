@@ -40,7 +40,6 @@ holyclaude/
 │   ├── settings.json       # Settings Claude Code par défaut (allowEdits)
 │   ├── claude-memory-full.md   # Template mémoire pour la variante full
 │   └── claude-memory-slim.md   # Template mémoire pour la variante slim
-├── vendor/artifacts/       # Paquets CloudCLI patchés (vendored)
 ├── assets/                 # Logo et bannière
 ├── docs/                   # Documentation : architecture, configuration, ollama, troubleshooting
 └── .github/workflows/      # CI/CD : build & push Docker Hub + GHCR (multi-arch, slim+full)
@@ -55,14 +54,14 @@ Le conteneur suit ce cycle de vie :
 3. **s6-overlay** (PID 1) — supervise CloudCLI et Xvfb, redémarre automatiquement en cas de crash
 
 Services supervisés par s6-overlay :
-- **CloudCLI** (`claude-code-ui --port 3001`) — interface web, tourne sous l'utilisateur `claude` avec `WORKSPACES_ROOT=/workspace`
+- **CloudCLI** (`cloudcli --port 3001`) — interface web, tourne sous l'utilisateur `claude` avec `WORKSPACES_ROOT=/workspace`
 - **Xvfb** (`Xvfb :99 1920x1080x24 -nolisten tcp`) — affichage virtuel pour Chromium headless
 
 Les variables d'environnement Docker Compose ne passent pas automatiquement à travers s6-setuidgid. Les scripts `run` des services définissent explicitement les variables nécessaires.
 
 ## Patches CloudCLI
 
-Le Dockerfile applique plusieurs patches au paquet CloudCLI vendored :
+Le Dockerfile applique plusieurs patches au paquet `@cloudcli-ai/cloudcli` :
 - **WebSocket** — préservation du type de frame binaire dans le proxy (Issue #11)
 - **Shell** — préservation de la position de défilement (Issue #35)
 - **Modèle** — support du modèle Claude personnalisé via SSE/select (Issue #36)
@@ -73,7 +72,7 @@ Contrôlées par `ARG VARIANT=full` dans le Dockerfile. La variante est stockée
 
 | Variante | Paquets supplémentaires |
 |----------|------------------------|
-| `full` (défaut) | Tous les paquets npm/pip/apt, Azure CLI, Junie, OpenCode |
+| `full` (défaut) | Tous les paquets (bun + npm + uv + apt), Junie, OpenCode |
 | `slim` | Noyau uniquement (TypeScript, Python, Playwright, AI CLIs principaux) |
 
 ## CI/CD

@@ -486,7 +486,7 @@ This is not a minimal container. This is an entire development workstation.
 ### Both variants (full + slim)
 
 <details>
-<summary><strong>Node.js 22 LTS + npm global packages</strong></summary>
+<summary><strong>Node.js 22 LTS + Bun global packages</strong></summary>
 
 | Package | What it's for |
 |---------|---------------|
@@ -524,6 +524,8 @@ This is not a minimal container. This is an entire development workstation.
 | Tool | What it's for |
 |------|---------------|
 | `git`, `gh` | Version control + GitHub CLI (PRs, issues, releases from the terminal) |
+| `bun`, `uv` | JavaScript & Python runtimes/package managers (user-scoped) |
+| `sift`, `@go-task/cli` (task) | Fast search and task runner |
 | `ripgrep` (`rg`), `fd`, `fzf` | Blazing-fast search — Claude uses these constantly |
 | `bat`, `tree`, `jq` | Better cat (syntax highlighting), directory trees, JSON processing |
 | `curl`, `wget` | HTTP downloads |
@@ -558,7 +560,7 @@ Seven AI CLIs. One container. Switch between them instantly. No other Docker ima
 The full image includes everything above, plus:
 
 <details>
-<summary><strong>Additional npm packages — deployment, ORMs, performance</strong></summary>
+<summary><strong>Additional Bun/npm packages — deployment, ORMs, performance</strong></summary>
 
 | Package | What it's for |
 |---------|---------------|
@@ -600,7 +602,7 @@ The full image includes everything above, plus:
 
 </details>
 
-> **Slim users:** Missing a package? Ask Claude. It installs npm/pip packages in seconds. System packages (pandoc, ffmpeg) take 1-2 minutes. You get the same capabilities — the full image just has zero wait time.
+> **Slim users:** Missing a package? Ask Claude. It installs bun/npm/uv/pip packages in seconds. System packages (pandoc, ffmpeg) take 1-2 minutes. You get the same capabilities — the full image just has zero wait time.
 
 <p align="right">
   <a href="#top">↑ back to top</a>
@@ -1032,7 +1034,7 @@ docker build --build-arg VARIANT=slim -t holyclaude:slim .
 docker buildx build --platform linux/arm64 -t holyclaude .
 ```
 
-This source release vendors the patched CloudCLI package under `vendor/artifacts/`, so `docker build` installs that bundled tarball instead of downloading `@siteboon/claude-code-ui` from npm.
+CloudCLI is installed from the official `@cloudcli-ai/cloudcli` npm package at build time.
 
 Then use `image: holyclaude` instead of `image: coderluii/holyclaude:latest` in your compose file.
 
@@ -1152,7 +1154,7 @@ The HolyClaude Docker image includes third-party software, each under its own li
 
 | Component | License | Source |
 |-----------|---------|--------|
-| CloudCLI | GPL-3.0 | [siteboon/claudecodeui](https://github.com/siteboon/claudecodeui) |
+| CloudCLI | GPL-3.0 | [cloudcli-ai/cloudcli](https://github.com/cloudcli-ai/cloudcli) |
 | s6-overlay | ISC | [just-containers/s6-overlay](https://github.com/just-containers/s6-overlay) |
 | Node.js | MIT | [nodejs/node](https://github.com/nodejs/node) |
 
