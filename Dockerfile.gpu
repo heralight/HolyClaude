@@ -7,12 +7,12 @@
 #   docker build --build-arg VARIANT=slim -t holyclaude:slim .
 # ==============================================================================
 
-FROM node:26-trixie-slim
+FROM docker.io/nvidia/cuda:13.2.1-runtime-ubuntu24.04
 
 LABEL org.opencontainers.image.source=https://github.com/CoderLuii/HolyClaude
 
 # ---------- Build args ----------
-ARG S6_OVERLAY_VERSION=3.2.3.0
+ARG S6_OVERLAY_VERSION=3.2.0.2
 ARG TARGETARCH
 ARG VARIANT=full
 
@@ -43,8 +43,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git curl wget jq nano vim ripgrep fd-find unzip zip tree tmux fzf bat bubblewrap \
     # Build tools
     build-essential pkg-config python3 python3-pip python3-venv \
-    # Browser (Playwright/Puppeteer)
-    chromium \
+    # Browser (Playwright/Puppeteer) — installed via apt on Debian, but
+    # Ubuntu base has no chromium apt pkg; Playwright bundle is used instead.
+    # chromium \
     # Fonts
     fonts-liberation2 fonts-dejavu-core fonts-noto-core fonts-noto-color-emoji fonts-inter \
     # Locale support
@@ -57,6 +58,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openssh-client \
     # Xvfb for headless Chrome
     xvfb \
+    nodejs npm \
     # Image processing
     imagemagick \
     # Sudo
@@ -86,26 +88,20 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
       > /etc/apt/sources.list.d/github-cli.list && \
     apt-get update && apt-get install -y gh && rm -rf /var/lib/apt/lists/*
 
-# ---------- bat symlink (Debian names it batcat) ----------
-RUN ln -sf /usr/bin/batcat /usr/local/bin/bat 2>/dev/null || true
+# bat is at /usr/bin/bat on Ubuntu (not batcat like Debian) — no symlink needed
 
 # ---------- Locale configuration ----------
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 
 # ---------- Create claude user ----------
 # node:26-trixie-slim already has UID 1000 as 'node' — rename it to 'claude'
-RUN usermod -l claude -d /home/claude -m node && \
-    groupmod -n claude node
+RUN usermod -l claude -d /home/claude -m ubuntu && \
+    groupmod -n claude ubuntu
 
 # ---------- bun (JavaScript runtime) ----------
-# Installed via npm for reliability (base image node:26 has npm built-in).
-# BUN_INSTALL points to ~/.bun so bun install -g writes user-scoped packages.
-RUN npm install -g bun
 
 USER claude
-RUN mkdir -p /home/claude/.bun/bin && \
-    ln -sf /usr/local/bin/bun /home/claude/.bun/bin/bun && \
-    chown -R claude:claude /home/claude/.bun
+RUN curl -fsSL https://bun.com/install | bash
 ENV BUN_INSTALL=/home/claude/.bun \
     PATH="/home/claude/.bun/bin:${PATH}"
 
@@ -163,6 +159,12 @@ RUN uv pip install --no-cache-dir --break-system-packages \
     rich click tqdm \
     playwright \
     apprise
+
+# ---------- Chromium for Playwright (not available via apt on Ubuntu) ----------
+# Playwright downloads its own chromium from cdn.playwright.dev, which may be
+# blocked by corporate proxies. The build continues either way.
+USER claude
+RUN playwright install chromium || echo "[warn] Playwright chromium download failed (proxy?) — install manually with 'playwright install chromium'"
 
 # ---------- Python packages (full only) ----------
 RUN if [ "$VARIANT" = "full" ]; then \

@@ -70,6 +70,7 @@ Your existing Anthropic account works directly:
 | :package: | [Image Variants](#package-image-variants) |
 | :whale: | [Docker Compose — Quick](#whale-docker-compose--quick) |
 | :whale2: | [Docker Compose — Full](#whale2-docker-compose--full) |
+| :brain: | [Docker Compose — GPU Inference](#brain-docker-compose--gpu-inference) |
 | :wrench: | [Environment Variables](#wrench-environment-variables) |
 | :rocket: | [What's Inside](#rocket-whats-inside) |
 | :robot: | [AI CLI Providers](#robot-ai-cli-providers) |
@@ -143,6 +144,7 @@ http://localhost:3001
 | macOS (Docker Desktop) | ✅ Fully supported | Apple Silicon & Intel via Docker Desktop |
 | Windows (WSL2 + Docker Desktop) | ✅ Fully supported | Requires WSL2 backend |
 | Synology / QNAP NAS | ✅ Fully supported | Use `CHOKIDAR_USEPOLLING=true` for SMB mounts |
+| NVIDIA GPU hosts | ✅ Supported via GPU build | Use `Dockerfile.gpu` with `docker-compose.gpu.yaml` override |
 | Kubernetes | 🔜 Coming soon | Helm chart planned |
 
 <p align="right">
@@ -224,6 +226,7 @@ Two flavors. Same quality. Pick your weight class.
 |-----|-------------|----------|
 | **`latest`** | Everything pre-installed — every tool, every library, every CLI | Most users. Zero wait time. Claude never has to stop and install something. |
 | **`slim`** | Core tools only — Claude installs extras on-demand | Smaller VPS, limited disk, metered bandwidth |
+| **local GPU build** | Same HolyClaude stack on an NVIDIA CUDA base image | GPU-enabled hosts that need CUDA/NVIDIA runtime access |
 | `X.Y.Z` | Full image, pinned version | Production stability — you control when to update |
 | `X.Y.Z-slim` | Slim image, pinned version | Production + small footprint |
 
@@ -436,6 +439,55 @@ These values are read by Docker Compose on the host. They are not container envi
 | **AI providers** | API keys for Gemini, Codex, Cursor, Junie, OpenCode | If you want to use AI CLIs other than Claude |
 
 > **Every single environment variable is optional.** The container runs perfectly with just `TZ=UTC`. Everything else has sensible defaults or is handled through the web UI.
+
+<p align="right">
+  <a href="#top">↑ back to top</a>
+</p>
+
+---
+
+## :brain: Docker Compose — GPU Inference
+
+Use the GPU override when you want HolyClaude to run on an NVIDIA CUDA base image and expose all host GPUs to the container for AI inference workloads.
+
+Requirements on the host:
+
+- NVIDIA GPU and driver installed
+- Docker Engine with NVIDIA Container Toolkit configured
+- Docker Compose v2 with GPU device support
+
+From the repository root:
+
+```bash
+# Build and start the GPU image
+docker compose -f docker-compose.yaml -f docker-compose.gpu.yaml up -d --build
+
+# Verify GPU visibility inside the container
+docker compose -f docker-compose.yaml -f docker-compose.gpu.yaml exec holyclaude nvidia-smi
+```
+
+`docker-compose.gpu.yaml` is an override, not a replacement for the standard compose file. It switches the build to `Dockerfile.gpu` and requests all NVIDIA GPUs:
+
+```yaml
+services:
+  holyclaude:
+    build:
+      context: ./
+      dockerfile: Dockerfile.gpu
+    devices:
+      - nvidia.com/gpu=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+```
+
+`Dockerfile.gpu` currently uses `nvidia/cuda:13.2.1-runtime-ubuntu24.04` and keeps the same HolyClaude tooling, CloudCLI service, Xvfb setup, persistent volumes, and `VARIANT=full|slim` behavior as the regular image.
+
+> The published `latest` and `slim` tags are the regular multi-arch images. The GPU image is intended to be built locally from `Dockerfile.gpu` unless a GPU-specific tag is published later.
 
 <p align="right">
   <a href="#top">↑ back to top</a>
@@ -719,8 +771,10 @@ holyclaude/
 │   └── notify.py            # Notification helper (Apprise)
 ├── s6-overlay/              # Process supervision (s6-rc services)
 ├── Dockerfile               # Single-stage build
+├── Dockerfile.gpu           # NVIDIA CUDA-based GPU build
 ├── docker-compose.yaml      # Quick start (minimal config)
 ├── docker-compose.full.yaml # Full config (all options)
+├── docker-compose.gpu.yaml  # GPU override for Docker Compose
 ├── LICENSE
 └── README.md
 ```
@@ -1032,6 +1086,12 @@ docker build --build-arg VARIANT=slim -t holyclaude:slim .
 
 # Build for ARM (Apple Silicon, Raspberry Pi, AWS Graviton)
 docker buildx build --platform linux/arm64 -t holyclaude .
+
+# Build the NVIDIA GPU image locally
+docker build -f Dockerfile.gpu -t holyclaude:gpu .
+
+# Start with the GPU compose override
+docker compose -f docker-compose.yaml -f docker-compose.gpu.yaml up -d --build
 ```
 
 CloudCLI is installed from the official `@cloudcli-ai/cloudcli` npm package at build time.

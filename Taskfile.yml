@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+vars:
+  GREETING: Hello, world!
+
+tasks:
+  build:
+    desc: compose compose build
+    cmds:
+      - compose build
+    silent: true
+  gpubuild:
+    desc:  compose build 
+    cmds:
+      - compose  -f docker-compose.yaml -f docker-compose.gpu.yaml build
+    silent: true
