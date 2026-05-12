@@ -14,7 +14,8 @@ services:
     hostname: holyclaude
     restart: unless-stopped
     shm_size: 2g
-    network_mode: bridge
+    # network_mode: bridge
+    userns_mode: host
     cap_add:
       - SYS_PTRACE      # Required for debugging
     # SYS_ADMIN and seccomp=unconfined intentionally removed.
@@ -24,6 +25,9 @@ services:
       - "3001:3001"     # CloudCLI web UI
     volumes:
       - ./data/claude:/home/claude/.claude:Z
-      - ./workspace:/workspace:Z
+      - ./data/cloudcli:/home/claude/.cloudcli:Z
+      - ./workspace:/workspace:rw,Z
     environment:
+      # - PUID=1000
+      # - PGID=1000
       - TZ=UTC          # Change to your timezone

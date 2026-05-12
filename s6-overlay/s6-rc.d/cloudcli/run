@@ -4,7 +4,13 @@ export HOME=/home/claude
 export WORKSPACES_ROOT=/workspace
 export NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--no-deprecation"
 export PATH="/home/claude/.bun/install/global/node_modules/.bin:${PATH}"
+echo "TTTT26"
+# exec s6-setuidgid claude sh -lc '
+#   bunx @cloudcli-ai/cloudcli --port 3001 & 
+#   SERVER_PID=$!
+#   sleep 5; 
+#   cd /home/claude/.claude-code-ui/plugins/project-stats && bun install && bun run build;
+#   wait $SERVER_PID
+# '
 
 exec s6-setuidgid claude bunx @cloudcli-ai/cloudcli --port 3001 
-# cd /home/claude/.claude-code-ui/plugins/project-stats
-# exec s6-setuidgid claude  bun install && bun run build 
