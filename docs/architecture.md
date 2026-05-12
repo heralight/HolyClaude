@@ -144,6 +144,14 @@ Bind mounts let users see and manage their data on disk. Named volumes hide data
 
 ## Image Variants
 
+HolyClaude has the standard image path plus a local GPU image path for NVIDIA inference workloads.
+
+- `Dockerfile` builds the regular full/slim images.
+- `Dockerfile.gpu` builds the same HolyClaude stack on `nvidia/cuda:13.2.1-runtime-ubuntu24.04`.
+- `docker-compose.gpu.yaml` is an override that requests all NVIDIA GPUs and switches the build to `Dockerfile.gpu` while reusing the normal service ports and volumes.
+
+The GPU Dockerfile keeps the same s6-overlay services, CloudCLI, Xvfb, bootstrap flow, persistent volumes, and `VARIANT=full|slim` behavior. It also renames the CUDA image's default `ubuntu` user to `claude`, sets Chromium/Puppeteer paths, and installs a modern Node runtime outside Ubuntu's default repositories for CloudCLI native modules.
+
 The `VARIANT` build arg controls which packages are installed:
 
 ```dockerfile
