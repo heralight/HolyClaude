@@ -450,10 +450,18 @@ These values are read by Docker Compose on the host. They are not container envi
 
 Use the GPU override when you want HolyClaude to run on an NVIDIA CUDA base image and expose all host GPUs to the container for AI inference workloads.
 
+The GPU build keeps the regular HolyClaude stack, but switches the base image and runtime details for NVIDIA workloads:
+
+- Base image: `nvidia/cuda:13.2.1-runtime-ubuntu24.04`
+- GPU access: all host NVIDIA GPUs requested through `docker-compose.gpu.yaml`
+- User model: the CUDA image's `ubuntu` user is renamed to `claude`
+- Node runtime: installed with `n` instead of Ubuntu's older Node.js packages, so CloudCLI native dependencies such as `better-sqlite3` and tools such as Prisma have a modern Node runtime
+- Browser tooling: `CHROME_PATH` and `PUPPETEER_EXECUTABLE_PATH` are set for Chromium/Playwright/Puppeteer compatibility
+
 Requirements on the host:
 
 - NVIDIA GPU and driver installed
-- Docker Engine with NVIDIA Container Toolkit configured
+- NVIDIA Container Toolkit configured for Docker
 - Docker Compose v2 with GPU device support
 
 From the repository root:
@@ -485,7 +493,7 @@ services:
               capabilities: [gpu]
 ```
 
-`Dockerfile.gpu` currently uses `nvidia/cuda:13.2.1-runtime-ubuntu24.04` and keeps the same HolyClaude tooling, CloudCLI service, Xvfb setup, persistent volumes, and `VARIANT=full|slim` behavior as the regular image.
+`Dockerfile.gpu` keeps the same HolyClaude tooling, CloudCLI service, Xvfb setup, persistent volumes, and `VARIANT=full|slim` behavior as the regular image. The main differences are the CUDA runtime base image, GPU device reservation, explicit Chromium/Puppeteer paths, and the modern Node runtime installed outside Ubuntu's default repositories.
 
 > The published `latest` and `slim` tags are the regular multi-arch images. The GPU image is intended to be built locally from `Dockerfile.gpu` unless a GPU-specific tag is published later.
 

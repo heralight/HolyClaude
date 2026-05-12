@@ -44,7 +44,7 @@ docker compose -f docker-compose.yaml -f docker-compose.gpu.yaml up -d --build
 docker compose -f docker-compose.yaml -f docker-compose.gpu.yaml exec holyclaude nvidia-smi
 ```
 
-The GPU build uses an NVIDIA CUDA runtime base image and keeps the same HolyClaude tooling, CloudCLI web UI, Xvfb, volumes, and `VARIANT=full|slim` behavior.
+The GPU build uses `nvidia/cuda:13.2.1-runtime-ubuntu24.04`, requests all NVIDIA GPUs through the Compose override, installs a modern Node runtime outside Ubuntu's default repositories for CloudCLI native modules, and keeps the same HolyClaude tooling, CloudCLI web UI, Xvfb, volumes, Chromium/Puppeteer setup, and `VARIANT=full|slim` behavior.
 
 ## What's Inside
 

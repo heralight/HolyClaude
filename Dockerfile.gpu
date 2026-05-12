@@ -58,7 +58,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openssh-client \
     # Xvfb for headless Chrome
     xvfb \
-    nodejs npm \
     # Image processing
     imagemagick \
     # Sudo
@@ -94,10 +93,20 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 
 # ---------- Create claude user ----------
-# node:26-trixie-slim already has UID 1000 as 'node' — rename it to 'claude'
+# image already has UID 1000 as 'ubuntu' — rename it to 'claude'
 RUN usermod -l claude -d /home/claude -m ubuntu && \
     groupmod -n claude ubuntu
 
+# ---------- Node.js 22 LTS (NodeSource) ----------
+# CloudCLI (better-sqlite3) and Prisma require modern Node.js. Ubuntu 24.04 repos
+# ship v18 which is too old — use NodeSource instead.
+RUN curl -o /usr/local/bin/n https://raw.githubusercontent.com/visionmedia/n/master/bin/n && \
+     chmod +x /usr/local/bin/n && \
+     n stable
+
+
+# ---------- Create claude user ----------
+# nvidia/cuda base has no 'node' user — rename ubuntu to claude
 # ---------- bun (JavaScript runtime) ----------
 
 USER claude

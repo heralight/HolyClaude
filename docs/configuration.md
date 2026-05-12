@@ -6,12 +6,15 @@ Complete reference for all HolyClaude configuration options.
 
 ## Docker Compose Files
 
-HolyClaude ships with two compose files:
+HolyClaude ships with three compose files:
 
 | File | Purpose | Usage |
 |------|---------|-------|
 | `docker-compose.yaml` | Quick start — minimal config, just works | `docker compose up -d` |
 | `docker-compose.full.yaml` | All options — ports, API keys, polling, notifications | `docker compose -f docker-compose.full.yaml up -d` |
+| `docker-compose.gpu.yaml` | Override for local NVIDIA GPU inference builds using `Dockerfile.gpu` | `docker compose -f docker-compose.yaml -f docker-compose.gpu.yaml up -d --build` |
+
+`docker-compose.gpu.yaml` is an override file. Use it with the base compose file so it inherits the standard ports, volumes, and environment while switching the build to the CUDA-based `Dockerfile.gpu` and requesting NVIDIA GPU devices.
 
 ---
 
@@ -125,6 +128,27 @@ Claude Code can authenticate via web UI (OAuth) or `ANTHROPIC_API_KEY`. Other AI
 | `1455` | Codex auth callback | Commented out |
 
 Uncomment additional ports in `docker-compose.full.yaml` as needed. If you use Codex's callback flow from your host browser, also uncomment `1455:1455`.
+
+---
+
+## GPU Compose Override
+
+For AI inference workloads on NVIDIA hosts, use the GPU override:
+
+```bash
+docker compose -f docker-compose.yaml -f docker-compose.gpu.yaml up -d --build
+docker compose -f docker-compose.yaml -f docker-compose.gpu.yaml exec holyclaude nvidia-smi
+```
+
+The override uses `Dockerfile.gpu`, based on `nvidia/cuda:13.2.1-runtime-ubuntu24.04`, and requests all host GPUs with both Compose device syntax and `deploy.resources.reservations.devices` for runtimes that honor either form.
+
+Host requirements:
+
+- NVIDIA driver installed
+- NVIDIA Container Toolkit configured for Docker
+- Docker Compose v2 with GPU device support
+
+The GPU image keeps the regular HolyClaude services and volumes. Its build additionally sets Chromium/Puppeteer paths and installs a modern Node runtime outside Ubuntu's default repositories because CloudCLI native modules and Prisma need a newer Node than Ubuntu 24.04 provides.
 
 ---
 
