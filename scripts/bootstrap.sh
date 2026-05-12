@@ -124,6 +124,7 @@ fi
 chown -R "$PUID:$PGID" "$CLAUDE_HOME/.claude"
 chown "$PUID:$PGID" "$CLAUDE_HOME/.claude.json"
 chown -R "$PUID:$PGID" "$CLAUDE_HOME/.cloudcli"
+chown -R "$PUID:$PGID" "/workspace"
 
 # ---------- Create sentinel ----------
 touch "$CLAUDE_HOME/.claude/.holyclaude-bootstrapped"
